@@ -1,0 +1,45 @@
+Feature: Gestión del carrito de compras
+  El usuario puede agregar productos al carrito, ver los productos seleccionados, modificar la cantidad o eliminarlos, y finalizar la compra con envío y pago.
+
+  Background:
+    Given el carrito está vacío
+
+  Scenario: Ver lista completa de productos
+    When el usuario solicita ver los productos
+    Then se muestra la lista detallada de productos disponibles
+
+  Scenario: Agregar un producto al carrito exitosamente
+    Given el stock disponible es mayor a 0
+    When el usuario ingresa el código "001" y cantidad 2
+    Then el producto "Iphone 13 mini" se agrega al carrito con 2 unidades
+
+  Scenario: Agregar más cantidad de un producto existente
+    Given el producto "001" ya está en el carrito con 2 unidades
+    When el usuario agrega 1 unidad más del mismo producto
+    Then la cantidad en el carrito es 3
+
+  Scenario: Intentar agregar un producto sin stock suficiente
+    Given el stock del producto "001" es 2
+    When el usuario intenta agregar 3 unidades
+    Then se muestra un mensaje indicando que no hay stock suficiente
+
+  Scenario: Ver el contenido del carrito
+    Given hay productos en el carrito
+    When el usuario visualiza el carrito
+    Then se muestra la lista de productos con sus cantidades y precios
+
+  Scenario: Modificar la cantidad de un producto en el carrito
+    Given el producto "001" está en el carrito con 3 unidades
+    When el usuario cambia la cantidad a 1
+    Then la nueva cantidad es 1 y se actualiza el costo total
+
+  Scenario: Eliminar un producto del carrito
+    Given el producto "001" está en el carrito con 1 unidad
+    When el usuario elimina el producto del carrito
+    Then el carrito queda vacío
+
+  Scenario: Finalizar la compra con envío y pago
+    Given el carrito tiene productos
+    And se ingresan los datos de dirección correctamente
+    When el usuario elige el medio de pago "Tarjeta"
+    Then la compra se realiza exitosamente con pago confirmado
