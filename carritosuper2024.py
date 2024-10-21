@@ -7,6 +7,8 @@ cod=0
 total=0
 cantidad=0
 producto_carro=0
+carrito={}
+productos={}
 
 productos= {
     "001" : {
@@ -132,9 +134,6 @@ def validar_opcion(opcion):
         else:
             opcion= input("La opción ingresada no es un número, vuelva a ingresar otra opción: ")
 
-
-
-
 def agregar_al_carrito(carrito):
         cod=input("Ingrese el código del producto que desea añadir a su carrito: ")
         if cod in productos:       
@@ -157,8 +156,6 @@ def agregar_al_carrito(carrito):
                 print("La cantidad que usted solicita no esta disponible ")
         else:
             print("No se encontró un producto con ese código ")
-        
-
 
 #funcion para mostrar el carrito armado por los clientes
 def ver_carrito():
@@ -183,14 +180,9 @@ def ver_carrito():
         print("Costo de Envío: $", precio_envio)
         total_con_envio = total + precio_envio
         print("El costo total de su compra es: $", total_con_envio)
+        modificar_carrito()
     else:
-        print("Su carrito se encuentra vacio")
-
-
-
-
-
-
+        print("Su carrito se encuentra vacio") 
 
 
 def pedir_direccion():
@@ -214,10 +206,12 @@ def pedir_direccion():
         #poner aqui el metodo de pago
         os.system("cls")
         elegir_medio_pago()
-    else:
+    elif confirmar == 'n':        
         os.system("cls")
         print("Volvamos a ingresar los datos.")
         return pedir_direccion()
+    else:
+        print ("Opción inválida")
 
 
 # Funciones de validación
@@ -237,10 +231,10 @@ def validar_calle():
 
 def validar_ciudad():
     while True:
-        ciudad = input("Ciudad: ")
-        if ciudad.isalpha():
-            return ciudad.capitalize()
-        print("Error: La ciudad solo puede contener letras.")
+        ciudad = input("Ciudad: ").strip()
+        if all(palabra.isalpha() for palabra in ciudad.split()):
+            return ciudad.title()  # Capitaliza cada palabra
+        print("Ingreso inválido, vuelva a intentarlo.")
 
 def validar_codigo_postal():
     while True:
@@ -263,9 +257,6 @@ def validar_pais():
             return pais.capitalize()
         print("Error: El país solo puede contener letras.")
 
-
-
-
 def elegir_medio_pago():
     print("""
 Seleccione el medio de pago:
@@ -275,14 +266,13 @@ Seleccione el medio de pago:
     while True:
         opcion = input("Ingrese el número de la opción elegida: ").strip()
         if opcion == "1":
-            print("Perfecto, el pago se realizará en efectivo cuando le entreguen el pedido ")
+            print("Muchas gracias por su compra, el pago se realizará en efectivo cuando le entreguen el pedido ")
             return "Efectivo"
         elif opcion == "2":
             procesar_pago_tarjeta()
             return "Tarjeta"
         else:
             print("Opción inválida. Intente nuevamente.")
-
 
 def procesar_pago_tarjeta():
     while True:  # Bucle para repetir el proceso si el usuario dice "n"
@@ -336,22 +326,14 @@ def procesar_pago_tarjeta():
             print("Volvamos a ingresar los datos de la tarjeta.")
 
 
-
-
-
-
-
-
-
-
 def resumen_final(direccion, medio_pago):
     print("\n--- Resumen de la Compra ---")
-    ver_carrito()  # Mostrar el carrito antes del resumen
+    ver_carrito()  # Mostrar los productos en el carrito
     print("Dirección de Envío:")
-    print(f"{direccion['nombre']}, {direccion['direccion']}, Código Postal: {direccion['codigo_postal']}")
+    print(f"{direccion['nombre']}, {direccion['calle']}, {direccion['ciudad']}, {direccion['provincia']}, {direccion['pais']}")
+    print(f"Código Postal: {direccion['codigo_postal']}")
     print(f"Método de Pago: {medio_pago}")
     print("\n¡Gracias por su compra!")
-
 
 
 def modificar_carrito():
@@ -363,24 +345,41 @@ def modificar_carrito():
     opcion1=validar_opciones_modificar_carrito(input("Ingrese la opción: "))
     if opcion1==1:
         print (""" 
-1)Modificar cantidad
-2)Eliminar producto
+1)Aumentar cantidad
+2)Disminuir cantidad/Eliminar producto
+3)Agregar un nuevo producto al carrito
     """)
         opcion2=int(input("Ingrese el número de la acción que desea realizar: "))
+
+
         if opcion2 == 1:  # Modificar cantidad
             código = input("Ingrese el código del producto que quiere modificar: ")
+
             if código in carrito:
-                producto = carrito[código]
-                cantidad_actualizada = int(input("Ingrese la nueva cantidad: "))
-                if cantidad_actualizada > 0:
-                    producto["cantidad"] = cantidad_actualizada
-                    producto["costo_total"] = producto["precio_unitario"] * cantidad_actualizada
-                    print("Cantidad modificada correctamente.")
+                producto_carrito = carrito[código]
+                stock_inicial = productos[código]["stock"] + producto_carrito["cantidad"]
+                cantidad_actual = producto_carrito["cantidad"]
+
+                # Calcular el stock disponible a partir del stock inicial y la cantidad en el carrito
+                stock_disponible = stock_inicial - cantidad_actual
+                print(f"Stock disponible para agregar: {stock_disponible} unidades")
+
+                nueva_cantidad = int(input("Ingrese cuántas unidades más desea agregar: "))
+
+                if nueva_cantidad > stock_disponible:
+                    print(f"No puede agregar más de {stock_disponible} unidades.")
+                elif nueva_cantidad > 0:
+                    # Actualizamos la cantidad en el carrito y el stock disponible
+                    producto_carrito["cantidad"] += nueva_cantidad
+                    producto_carrito["costo_total"] = producto_carrito["precio_unitario"] * producto_carrito["cantidad"]
+                    productos[código]["stock"] -= nueva_cantidad
+
+                    print(f"Cantidad actualizada correctamente. Ahora tiene {producto_carrito['cantidad']} unidades en el carrito.")
                 else:
-                    print("La cantidad debe ser mayor a 0.")
+                    print("Debe ingresar una cantidad mayor a 0.")
             else:
                 print("El producto no existe en el carrito.")
-        
+
         elif opcion2 == 2:  # Eliminar producto
             while True:
                 código = input("Ingrese el código del producto que desea eliminar: ")
@@ -404,6 +403,8 @@ def modificar_carrito():
                 else:
                     print("El producto no se encuentra en el carrito. Ingrese otro código.")
                 
+        elif opcion2 == 3:
+            agregar_al_carrito(carrito)
         else:
             print("Opción inválida.")
                 
@@ -417,7 +418,7 @@ Desea seguir con la compra? ("Ingrese número, no letras)
             # Llamada para pedir dirección
             direccion_cliente = pedir_direccion()
             # Agregar dirección al carrito
-            carrito["direccion_envio"] = direccion_cliente
+            #carrito["direccion_envio"] = direccion_cliente
         else:
             print("Compra cancelada.")
     else:
@@ -434,14 +435,13 @@ def validar_opciones_modificar_carrito(opcion1):
         else:
             opcion1= input("La opción ingresada no es un número, vuelva a ingresar otra opción: ")
 
-
 while (salir==False):
     print (""" 
 Bienvenido a tienda "TechMarket":
     1)Mostrar productos en detalle
     2)Ver producto por código
-    3)Realizar compra 
-    4)Salir
+    3)Agregar al carrito 
+    4)Finalizar compra
     """)
     
     opcion= validar_opcion(input("Ingrese una opción: "))
@@ -463,7 +463,6 @@ Bienvenido a tienda "TechMarket":
     if opcion==4:#realizar la compra si es que hay productos en el carrito
         ver_carrito()
         print("")
-        modificar_carrito()
         continuar = input("Ingrese ENTER para continuar")
         os.system("cls")
         print("")
